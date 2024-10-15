@@ -1,0 +1,31 @@
+version: '3.5'
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/symfony
+    ports:
+      - "9000:9000"
+    networks:
+      - symfony
+    environment:
+      - APP_ENV=dev
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/symfony
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - symfony
+
+networks:
+  symfony:
+    driver: bridge
