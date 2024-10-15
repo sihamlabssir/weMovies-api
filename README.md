@@ -30,8 +30,11 @@ WeMovies API is built using Clean Architecture principles, which promotes a clea
 
 ## How to run the api
 
+### `composer install`
+composer install to download the list of vendors needed (to be added in dockerfile soon)
+
 ### `make build`
-This will build both php and nginx images based on the Dockerfile located in the root of the project, runs composer install to download the list of vendors needed
+This will build both php and nginx images based on the Dockerfile located in the root of the project.
 
 ### `make start`
 Runs the app in the development mode.\

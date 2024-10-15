@@ -3,6 +3,7 @@
 namespace App\Tests\Application\Service;
 
 use App\Application\DTO\GenreResponseDTO;
+use App\Application\Service\CacheServiceInterface;
 use App\Application\Service\GenreService;
 use App\Domain\Entity\Genre;
 use App\Domain\Repository\GenreRepositoryInterface;
@@ -12,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 class GenreServiceTest extends TestCase
 {
     private GenreRepositoryInterface $genreRepositoryMock;
+    private CacheServiceInterface $cacheServiceMock;
     private GenreService $genreService;
 
     /**
@@ -20,7 +22,8 @@ class GenreServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->genreRepositoryMock = $this->createMock(GenreRepositoryInterface::class);
-        $this->genreService = new GenreService($this->genreRepositoryMock);
+        $this->cacheServiceMock = $this->createMock(CacheServiceInterface::class);
+        $this->genreService = new GenreService($this->genreRepositoryMock, $this->cacheServiceMock);
     }
 
     public function testFetchGenresListReturnsEmptyArrayWhenNoGenres(): void

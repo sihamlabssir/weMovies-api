@@ -3,6 +3,7 @@
 namespace App\Tests\Application\Service;
 
 use App\Application\DTO\MovieResponseDTO;
+use App\Application\Service\CacheServiceInterface;
 use App\Application\Service\MovieService;
 use App\Domain\Entity\Movie;
 use App\Domain\Repository\MovieRepositoryInterface;
@@ -13,10 +14,13 @@ class MovieServiceTest extends TestCase
     private MovieRepositoryInterface $movieRepositoryMock;
     private MovieService $movieService;
 
+    private CacheServiceInterface $cacheServiceMock;
+
     protected function setUp(): void
     {
         $this->movieRepositoryMock = $this->createMock(MovieRepositoryInterface::class);
-        $this->movieService = new MovieService($this->movieRepositoryMock);
+        $this->cacheServiceMock = $this->createMock(CacheServiceInterface::class);
+        $this->movieService = new MovieService($this->movieRepositoryMock, $this->cacheServiceMock);
     }
 
     public function testFetchTopRatedMovieReturnsNullWhenNoMovie(): void

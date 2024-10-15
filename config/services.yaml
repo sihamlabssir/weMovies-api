@@ -6,6 +6,8 @@
 parameters:
     tmdb_api_key: '%env(TMDB_API_KEY)%'
     tmdb_api_uri: '%env(TMDB_API_URI)%'
+    redis.url: '%env(REDIS_URL)%'
+    redis.ttl: '%env(REDIS_TTL)%'
 
 services:
     # default configuration for services in *this* file
@@ -33,5 +35,14 @@ services:
             $apiKey: '%tmdb_api_key%'
             $apiUrl: '%tmdb_api_uri%'
             $client: '@App\Infrastructure\httpClient\Client'
+
+    Predis\Client:
+        arguments:
+            - '%redis.url%'
+
+    App\Infrastructure\Service\RedisService:
+        arguments:
+            $redisClient: '@Predis\Client'
+            $ttl: '%redis.ttl%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

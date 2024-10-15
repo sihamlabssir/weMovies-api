@@ -24,7 +24,7 @@ stop: ## Stop containers
 .PHONY: phpstan phpcs csfix
 
 phpstan: ## Perform a static codebase analysis
-	$(DOCKER_COMPOSE) exec php $(COMPOSER) run phpcs
+	$(DOCKER_COMPOSE) exec php ./vendor/bin/phpstan
 
 phpcs: ## Check the coding style
 	$(DOCKER_COMPOSE) exec php $(COMPOSER) run phpcs

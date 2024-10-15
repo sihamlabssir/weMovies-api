@@ -8,27 +8,90 @@ use App\Domain\Repository\MovieRepositoryInterface;
 
 class MovieService implements MovieInterface
 {
-    private const YOUTUBE_URI = 'https://www.youtube.com/watch?v=';
-    private const TMDB_IMAGE_URI = 'https://image.tmdb.org/t/p/original/';
+    private const VIDEO_URI = 'https://www.youtube.com/watch?v=';
+    private const IMAGE_URI = 'https://image.tmdb.org/t/p/original/';
 
-    public function __construct(private readonly MovieRepositoryInterface $movieRepository)
-    {
+    private const MOVIE_CACHE_KEY_PREFIX = 'movies';
+
+    public function __construct(
+        private readonly MovieRepositoryInterface $movieRepository,
+        private readonly CacheServiceInterface $cacheService
+    ) {
     }
 
     public function fetchTopRatedMovie(): ?MovieResponseDTO
     {
-        $movie = $this->movieRepository->fetchTopRatedMovie();
-        return !is_null($movie) ? $this->buildResponseDto($movie) : null;
+        $cacheKey = self::MOVIE_CACHE_KEY_PREFIX . 'top_rated';
+        if ($cachedData = $this->cacheService->get($cacheKey)) {
+            $cachedMovie = json_decode($cachedData, true);
+            return MovieResponseDTO::toResponseDto(
+                $cachedMovie['id'],
+                $cachedMovie['title'],
+                $cachedMovie['releaseYear'],
+                $cachedMovie['productionCompanies'],
+                $cachedMovie['votes'],
+                $cachedMovie['description'],
+                $cachedMovie['videoPath'],
+                $cachedMovie['videoTitle'],
+                $cachedMovie['stars'],
+                $cachedMovie['posterPath'],
+            );
+        }
+
+        if (is_null($movie = $this->movieRepository->fetchTopRatedMovie())) {
+            return null;
+        }
+
+        $movieDto = $this->buildResponseDto($movie);
+        $this->cacheService->set($cacheKey, json_encode($movieDto->toArray()));
+
+        return $movieDto;
     }
 
     public function fetchMoviesByGenre(int $genreId): array
     {
-        $listMoviesByGenre = $this->movieRepository->fetchMoviesByGenre($genreId);
-        return array_map(
+        $cacheKey = self::MOVIE_CACHE_KEY_PREFIX . '-genre-' . $genreId;
+        if ($cachedData = $this->cacheService->get($cacheKey)) {
+            return json_decode($cachedData, true);
+        }
+
+        if (empty($listMoviesByGenre = $this->movieRepository->fetchMoviesByGenre($genreId))) {
+            return [];
+        }
+        $listMoviesByGenre = array_map(
             fn($movie) => $this->buildResponseDto($movie)->toArray(),
             $listMoviesByGenre
         );
+
+        $this->cacheService->set($cacheKey, json_encode($listMoviesByGenre));
+
+        return $listMoviesByGenre;
     }
+
+    public function fetchMoviesByTitle(string $title): array
+    {
+        $cacheKey = self::MOVIE_CACHE_KEY_PREFIX . '-keyword-' . $title;
+        if ($cachedData = $this->cacheService->get($cacheKey)) {
+                return json_decode($cachedData, true);
+        }
+
+        if (empty($listMoviesByTitle = $this->movieRepository->fetchMoviesByTitle($title))) {
+            return [];
+        }
+        $listMoviesByTitle = array_map(
+            fn($movie) => $this->buildResponseDto($movie)->toArray(),
+            $listMoviesByTitle
+        );
+        $this->cacheService->set($cacheKey, json_encode($listMoviesByTitle));
+
+        return $listMoviesByTitle;
+    }
+
+    public function rateMovie(int $movieId, int $rate): bool
+    {
+        return $this->movieRepository->rateMovie($movieId, $rate);
+    }
+
 
     private function buildResponseDto(Movie $movie): MovieResponseDTO
     {
@@ -43,12 +106,12 @@ class MovieService implements MovieInterface
             if ('Trailer' !== $video['type']) {
                 continue;
             }
-            $videoPath = self::YOUTUBE_URI . $video['key'];
+            $videoPath = self::VIDEO_URI . $video['key'];
             $videoTitle = $video['name'];
         }
 
 
-        $poster = self::TMDB_IMAGE_URI . $movie->getPosterKey();
+        $poster = self::IMAGE_URI . $movie->getPosterKey();
 
         return MovieResponseDTO::toResponseDto(
             $movie->getId(),
@@ -62,19 +125,5 @@ class MovieService implements MovieInterface
             $movie->getAverageRating() / 2,
             $poster
         );
-    }
-
-    public function fetchMoviesByTitle(string $title): array
-    {
-        $listMoviesByTitle = $this->movieRepository->fetchMoviesByTitle($title);
-        return array_map(
-            fn($movie) => $this->buildResponseDto($movie)->toArray(),
-            $listMoviesByTitle
-        );
-    }
-
-    public function rateMovie(int $movieId, int $rate): bool
-    {
-        return $this->movieRepository->rateMovie($movieId, $rate);
     }
 }

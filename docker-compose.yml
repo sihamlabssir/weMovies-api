@@ -9,6 +9,8 @@ services:
       - .:/var/www/symfony
     ports:
       - "9000:9000"
+    depends_on:
+      - redis
     networks:
       - symfony
     environment:
@@ -23,6 +25,13 @@ services:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - php
+    networks:
+      - symfony
+
+  redis:
+    build:
+      context: .
+      dockerfile: docker/redis/Dockerfile
     networks:
       - symfony
 
